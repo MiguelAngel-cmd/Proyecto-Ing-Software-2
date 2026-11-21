@@ -1,30 +1,19 @@
 package com.biblioteca.modelo;
 
-/** Tipos de recurso que maneja la biblioteca. */
+/** Tipos de recurso y la letra con la que empiezan sus códigos (L-001, E-001...). */
 public enum TipoRecurso {
-    LIBRO("Libro", "L"),
-    EQUIPO("Equipo", "E"),
-    OTRO("Otro", "O");
+    LIBRO("Libro", "L"), EQUIPO("Equipo", "E"), OTRO("Otro", "O");
 
     private final String nombre;
-    private final String prefijoId;
+    private final String prefijo;
 
-    TipoRecurso(String nombre, String prefijoId) {
+    TipoRecurso(String nombre, String prefijo) {
         this.nombre = nombre;
-        this.prefijoId = prefijoId;
+        this.prefijo = prefijo;
     }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    /** Letra con la que empiezan los códigos de este tipo (L-001, E-001...). */
-    public String getPrefijoId() {
-        return prefijoId;
-    }
+    public String getPrefijo() { return prefijo; }
 
     @Override
-    public String toString() {
-        return nombre;
-    }
+    public String toString() { return nombre; }
 }

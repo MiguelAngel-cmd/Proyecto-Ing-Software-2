@@ -1,29 +1,14 @@
 package com.biblioteca.modelo;
 
-import com.biblioteca.reglas.ReglaEquipo;
-import com.biblioteca.reglas.ReglaPrestamo;
-
-/** Equipo (portátil, proyector, cámara...); su dato particular es la marca. */
+/** Regla (plazo en días, renovaciones, máximo por usuario) = (3, 1, 1). Dato propio: la marca. */
 public class Equipo extends Recurso {
+    private static final ReglaPrestamo REGLA = new ReglaPrestamo(3, 1, 1);
 
-    private static final ReglaPrestamo REGLA = new ReglaEquipo();
-
-    public Equipo(String id, String titulo, String marca) {
-        super(id, titulo, marca);
+    public Equipo(String id, String titulo, String detalle) {
+        super(id, titulo, detalle);
     }
 
-    @Override
-    public TipoRecurso getTipo() {
-        return TipoRecurso.EQUIPO;
-    }
-
-    @Override
-    public ReglaPrestamo getRegla() {
-        return REGLA;
-    }
-
-    @Override
-    public String getEtiquetaDetalle() {
-        return "Marca";
-    }
+    @Override public TipoRecurso getTipo() { return TipoRecurso.EQUIPO; }
+    @Override public ReglaPrestamo getRegla() { return REGLA; }
+    @Override public String getEtiquetaDetalle() { return "Marca"; }
 }

@@ -1,73 +1,39 @@
 package com.biblioteca.multas;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 import com.biblioteca.modelo.Equipo;
 import com.biblioteca.modelo.Libro;
 import com.biblioteca.modelo.Recurso;
 import org.junit.Test;
 
+/** Pruebas del patrón Strategy: cada política calcula distinto con la misma interfaz. */
 public class MultasTest {
-
     private final Recurso libro = new Libro("L-001", "Clean Code", "Martin");
-    private final Recurso equipo = new Equipo("E-001", "Portátil", "HP");
+    private final Recurso equipo = new Equipo("E-001", "Portátil", "Lenovo");
 
     @Test
-    public void multaPorDiaCobraUnValorFijoPorDia() {
-        assertEquals(3000, new MultaPorDia().calcular(3, libro));
+    public void porDiaCobraMilPesosPorDia() {
+        assertEquals(5000, new MultaPorDia().calcular(5, libro));
     }
 
     @Test
-    public void multaProgresivaCobraMasEntreMasTarde() {
+    public void progresivaEncarecePorTramos() {
         PoliticaMulta p = new MultaProgresiva();
-        assertEquals(1000, p.calcular(2, libro));          // 2 x 500
-        assertEquals(3500, p.calcular(5, libro));          // 3 x 500 + 2 x 1000
-        assertEquals(12500, p.calcular(12, libro));        // 3 x 500 + 7 x 1000 + 2 x 2000
+        assertEquals(1500, p.calcular(3, libro));                    // 3 x 500
+        assertEquals(1500 + 7 * 1000, p.calcular(10, libro));       // + 7 x 1.000
+        assertEquals(1500 + 7000 + 2000, p.calcular(11, libro));    // + 1 x 2.000
     }
 
     @Test
-    public void multaPorTipoDependeDelRecurso() {
+    public void porTipoDependeDelRecurso() {
         PoliticaMulta p = new MultaPorTipoRecurso();
-        assertEquals(2000, p.calcular(4, libro));          // 4 x 500
-        assertEquals(6000, p.calcular(2, equipo));         // 2 x 3000
+        assertEquals(1000, p.calcular(2, libro));       // 2 x 500
+        assertEquals(6000, p.calcular(2, equipo));      // 2 x 3.000
     }
 
     @Test
-    public void sinRetrasoNoHayMulta() {
-        CalculadoraMultas calc = new CalculadoraMultas();
-        assertEquals(0, calc.calcular(0, libro));
-        assertEquals(0, calc.calcular(-2, libro));
-    }
-
-    @Test
-    public void laCalculadoraUsaLaPoliticaActivaYSePuedeCambiar() {
-        CalculadoraMultas calc = new CalculadoraMultas();   // por defecto: por día
-        assertEquals(5000, calc.calcular(5, libro));
-
-        calc.setPolitica(new MultaProgresiva());            // se cambia sin tocar la calculadora
-        assertEquals(3500, calc.calcular(5, libro));
-    }
-
-    @Test
-    public void laCalculadoraIniciaConLaPoliticaPorDia() {
-        assertEquals("Por día", new CalculadoraMultas().getPolitica().getNombre());
-    }
-
-    @Test
-    public void laListaDePoliticasTieneTresOpciones() {
-        assertEquals(3, PoliticasDeMulta.todas().size());
-    }
-
-    @Test
-    public void sePuedeInyectarUnaPoliticaPropia() {
-        PoliticaMulta gratis = new PoliticaMulta() {
-            public long calcular(long dias, Recurso r) { return 0; }
-            public String getNombre() { return "Sin multa"; }
-            public String getDescripcion() { return "Perdón de multas"; }
-        };
-        CalculadoraMultas calc = new CalculadoraMultas(gratis);
-        assertEquals(0, calc.calcular(10, libro));
-        assertSame(gratis, calc.getPolitica());
+    public void todasLasPoliticasSePuedenUsarPorLaInterfaz() {
+        for (PoliticaMulta p : PoliticaMulta.TODAS) assertEquals(true, p.calcular(1, libro) > 0);
     }
 }

@@ -1,29 +1,14 @@
 package com.biblioteca.modelo;
 
-import com.biblioteca.reglas.ReglaOtro;
-import com.biblioteca.reglas.ReglaPrestamo;
-
-/** Cualquier otro recurso (sala, juego de mesa, calculadora...); su dato es la categoría. */
+/** Regla (plazo en días, renovaciones, máximo por usuario) = (7, 1, 2). Dato propio: la categoría. */
 public class Otro extends Recurso {
+    private static final ReglaPrestamo REGLA = new ReglaPrestamo(7, 1, 2);
 
-    private static final ReglaPrestamo REGLA = new ReglaOtro();
-
-    public Otro(String id, String titulo, String categoria) {
-        super(id, titulo, categoria);
+    public Otro(String id, String titulo, String detalle) {
+        super(id, titulo, detalle);
     }
 
-    @Override
-    public TipoRecurso getTipo() {
-        return TipoRecurso.OTRO;
-    }
-
-    @Override
-    public ReglaPrestamo getRegla() {
-        return REGLA;
-    }
-
-    @Override
-    public String getEtiquetaDetalle() {
-        return "Categoría";
-    }
+    @Override public TipoRecurso getTipo() { return TipoRecurso.OTRO; }
+    @Override public ReglaPrestamo getRegla() { return REGLA; }
+    @Override public String getEtiquetaDetalle() { return "Categoría"; }
 }
