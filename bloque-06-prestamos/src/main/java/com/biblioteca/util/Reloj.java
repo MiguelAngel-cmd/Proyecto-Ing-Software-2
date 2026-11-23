@@ -2,28 +2,13 @@ package com.biblioteca.util;
 
 import java.time.LocalDate;
 
-/**
- * Fecha "oficial" del sistema. Permite adelantar días para probar multas y
- * vencimientos sin esperar semanas (útil en la demostración y en las pruebas).
- */
+/** La fecha del sistema. Se puede adelantar para demostrar préstamos vencidos y multas sin esperar días reales. */
 public class Reloj {
-
     private LocalDate fecha;
 
-    /** Reloj que arranca en la fecha actual. */
-    public Reloj() {
-        this(LocalDate.now());
-    }
+    public Reloj() { this(LocalDate.now()); }
+    public Reloj(LocalDate inicial) { this.fecha = inicial; }
 
-    public Reloj(LocalDate fechaInicial) {
-        this.fecha = fechaInicial;
-    }
-
-    public synchronized LocalDate hoy() {
-        return fecha;
-    }
-
-    public synchronized void avanzarDias(int dias) {
-        fecha = fecha.plusDays(dias);
-    }
+    public LocalDate hoy() { return fecha; }
+    public void avanzarDias(int dias) { fecha = fecha.plusDays(dias); }
 }

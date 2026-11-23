@@ -1,23 +1,21 @@
 package com.biblioteca.servicio;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.biblioteca.catalogo.Catalogo;
-import com.biblioteca.dto.PrestamoDTO;
 import com.biblioteca.excepcion.BibliotecaException;
+import com.biblioteca.modelo.Prestamo;
 import com.biblioteca.modelo.TipoRecurso;
 import com.biblioteca.modelo.Usuario;
-import com.biblioteca.util.Dinero;
 import com.biblioteca.util.Reloj;
 import java.time.LocalDate;
 import org.junit.Before;
 import org.junit.Test;
 
+/** Prueba el sistema completo a través de la fachada (Facade), con los demás patrones trabajando juntos. */
 public class BibliotecaFachadaTest {
-
     private BibliotecaFachada fachada;
 
     @Before
@@ -26,82 +24,86 @@ public class BibliotecaFachadaTest {
         fachada = new BibliotecaFachada(new Reloj(LocalDate.of(2026, 11, 1)));
         fachada.registrarUsuario(new Usuario("ana", "Ana"));
         fachada.registrarUsuario(new Usuario("luis", "Luis"));
-        fachada.registrarRecurso(TipoRecurso.LIBRO, "Clean Code", "Martin");   // L-001
-        fachada.registrarRecurso(TipoRecurso.EQUIPO, "Portátil", "HP");        // E-001
-    }
-
-    private void esperaError(Runnable accion, String fragmento) {
-        try {
-            accion.run();
-            fail("Debió lanzar BibliotecaException con: " + fragmento);
-        } catch (BibliotecaException e) {
-            assertTrue("Mensaje real: " + e.getMessage(), e.getMessage().contains(fragmento));
-        }
+        fachada.registrarRecurso(TipoRecurso.LIBRO, "Clean Code", "Martin");          // L-001
+        fachada.registrarRecurso(TipoRecurso.LIBRO, "Refactoring", "Fowler");         // L-002
+        fachada.registrarRecurso(TipoRecurso.EQUIPO, "Portátil", "Lenovo");           // E-001
+        fachada.registrarRecurso(TipoRecurso.EQUIPO, "Proyector", "Epson");           // E-002
     }
 
     @Test
-    public void listaYBuscaRecursos() {
-        assertEquals(2, fachada.listarRecursos().size());
-        assertEquals(1, fachada.buscarRecursos("clean").size());
+    public void elVencimientoDependeDelTipoDeRecurso() {
+        assertEquals(LocalDate.of(2026, 11, 15), fachada.prestar("L-001", "ana").getFechaVencimiento());   // libro: 14 días
+        assertEquals(LocalDate.of(2026, 11, 4), fachada.prestar("E-001", "ana").getFechaVencimiento());    // equipo: 3 días
     }
 
     @Test
-    public void flujoCompletoPrestarDevolverConMulta() {
-        PrestamoDTO p = fachada.prestar("L-001", "ana");
-        assertEquals(LocalDate.of(2026, 11, 15), p.fechaVencimiento());
-        assertEquals("Prestado", fachada.buscarRecursos("clean").get(0).estado());
-
-        fachada.avanzarDias(14 + 3);
-        PrestamoDTO vencido = fachada.prestamosActivos().get(0);
-        assertEquals(3, vencido.diasRetraso());
-        assertEquals(3000, vencido.multa());                         // multa estimada
-
-        PrestamoDTO devuelto = fachada.devolver(p.id());
-        assertFalse(devuelto.activo());
-        assertEquals(3000, devuelto.multa());
-        assertEquals("Disponible", fachada.buscarRecursos("clean").get(0).estado());
+    public void unRecursoPrestadoNoSePuedePrestarDeNuevo() {
+        fachada.prestar("L-001", "ana");
+        assertThrows(BibliotecaException.class, () -> fachada.prestar("L-001", "luis"));
     }
 
     @Test
-    public void cambiarLaPoliticaCambiaElValorDeLaMulta() {
-        PrestamoDTO p = fachada.prestar("L-001", "ana");
-        fachada.cambiarPolitica(1);                                  // progresiva
-        assertEquals("Progresiva", fachada.politicaActual().getNombre());
-        fachada.avanzarDias(14 + 5);
-        assertEquals(3500, fachada.devolver(p.id()).multa());
+    public void elLimiteDePrestamosDependeDelTipo() {
+        fachada.prestar("E-001", "ana");                                              // equipo: máximo 1 por usuario
+        assertThrows(BibliotecaException.class, () -> fachada.prestar("E-002", "ana"));
+        fachada.prestar("L-001", "ana");                                              // libros: otro límite
     }
 
     @Test
-    public void renovarYListaDeEsperaConAviso() {
-        PrestamoDTO p = fachada.prestar("L-001", "ana");
-        assertEquals(1, fachada.renovar(p.id()).renovaciones());
+    public void laRenovacionRespetaElMaximoDelTipo() {
+        int id = fachada.prestar("E-001", "ana").getId();                             // equipo: 1 renovación
+        fachada.renovar(id);
+        assertThrows(BibliotecaException.class, () -> fachada.renovar(id));
+    }
 
+    @Test
+    public void devolverATiempoNoCobraMulta() {
+        int id = fachada.prestar("L-001", "ana").getId();
+        assertEquals(0, fachada.devolver(id).getMulta());
+        assertTrue(fachada.listarRecursos().get(0).estaDisponible());
+    }
+
+    @Test
+    public void devolverTardeCobraSegunLaPoliticaVigente() {
+        int id = fachada.prestar("L-001", "ana").getId();                             // vence el 15 de noviembre
+        fachada.avanzarDias(19);                                                      // hoy es 20: 5 días de retraso
+        assertEquals(5000, fachada.devolver(id).getMulta());                          // política por día
+    }
+
+    @Test
+    public void cambiarLaPoliticaCambiaElResultado() {
+        int id = fachada.prestar("L-001", "ana").getId();
+        fachada.avanzarDias(19);
+        fachada.cambiarPolitica(2);                                                   // por tipo: libro $500/día
+        assertEquals(2500, fachada.devolver(id).getMulta());
+    }
+
+    @Test
+    public void alDevolverSeAvisaAlPrimeroDeLaListaDeEspera() {
+        Prestamo p = fachada.prestar("L-001", "ana");
         fachada.unirseListaEspera("L-001", "luis");
         assertEquals(1, fachada.cantidadEnEspera("L-001"));
 
-        fachada.devolver(p.id());
+        fachada.devolver(p.getId());
+
         assertEquals(1, fachada.avisos("luis").size());
-        fachada.limpiarAvisos("luis");
-        assertEquals(0, fachada.avisos("luis").size());
+        assertEquals(0, fachada.cantidadEnEspera("L-001"));
     }
 
     @Test
-    public void prestarAUnUsuarioInexistenteLanzaError() {
-        esperaError(() -> fachada.prestar("L-001", "nadie"), "No existe el usuario");
+    public void noSeRenuevaSiHayAlguienEsperando() {
+        int id = fachada.prestar("L-001", "ana").getId();
+        fachada.unirseListaEspera("L-001", "luis");
+        assertThrows(BibliotecaException.class, () -> fachada.renovar(id));
     }
 
     @Test
-    public void historialIncluyeLosPrestamosDevueltos() {
-        PrestamoDTO p = fachada.prestar("L-001", "ana");
-        fachada.devolver(p.id());
-        assertEquals(0, fachada.prestamosActivos().size());
-        assertEquals(1, fachada.historial().size());
+    public void noHaceFaltaEsperarUnRecursoDisponible() {
+        assertThrows(BibliotecaException.class, () -> fachada.unirseListaEspera("L-001", "luis"));
     }
 
     @Test
-    public void formatoDePesos() {
-        assertEquals("$0", Dinero.formato(0));
-        assertEquals("$12.500", Dinero.formato(12500));
-        assertEquals("$1.234.567", Dinero.formato(1234567));
+    public void unUsuarioInexistenteLanzaError() {
+        assertThrows(BibliotecaException.class, () -> fachada.prestar("L-001", "pepe"));
     }
 }

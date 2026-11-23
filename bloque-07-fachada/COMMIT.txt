@@ -1,0 +1,1 @@
+feat(patrones): Facade como única puerta de entrada al sistema + pruebas de integración
