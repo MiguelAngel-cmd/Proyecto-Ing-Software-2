@@ -1,1 +1,0 @@
-feat(patrones): Singleton para el catálogo único y DAO en memoria + pruebas

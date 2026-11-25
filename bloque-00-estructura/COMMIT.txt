@@ -1,1 +1,0 @@
-chore: estructura inicial del proyecto (pom, .gitignore y README básico)

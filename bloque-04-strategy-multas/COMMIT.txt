@@ -1,1 +1,0 @@
-feat(patrones): Strategy para las políticas de multa intercambiables + pruebas

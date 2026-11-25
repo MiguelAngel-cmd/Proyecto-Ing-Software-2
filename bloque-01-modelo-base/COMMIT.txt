@@ -1,1 +1,0 @@
-feat(modelo): recursos (Libro, Equipo, Otro) con sus reglas de préstamo y excepción de negocio

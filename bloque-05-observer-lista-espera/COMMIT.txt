@@ -1,1 +1,0 @@
-feat(patrones): Observer para avisar al siguiente de la lista de espera + pruebas

@@ -1,1 +1,0 @@
-feat(servicio): préstamo, devolución, renovación y lista de espera (junta Singleton, Strategy y Observer)

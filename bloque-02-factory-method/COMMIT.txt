@@ -1,1 +1,0 @@
-feat(patrones): Factory Method para crear recursos de cada tipo + pruebas
